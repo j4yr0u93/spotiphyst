@@ -1,0 +1,25 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1586278568478.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "0",
+    "id" : "82D3CD9E",
+    "lastKnownWriteTime" : 1586278916,
+    "last_content_update" : 1586278916957,
+    "path" : "C:/Users/louri/Desktop/spotiphyst/music_data_web_shiny/app.R",
+    "project_path" : "music_data_web_shiny/app.R",
+    "properties" : {
+        "cursorPosition" : "2,0",
+        "scrollLine" : "0"
+    },
+    "read_only" : false,
+    "read_only_alternatives" : [
+    ],
+    "relative_order" : 2,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}
