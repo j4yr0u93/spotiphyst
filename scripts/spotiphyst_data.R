@@ -1,6 +1,9 @@
-#testing space
+#scripting space for data pulling/scraping
 
 library(tidyr)
+library(purrr)
+library(dplyr)
+library(readr)
 
 #function to get user music data and clean it
 get_user_data <- function(userID){
@@ -18,9 +21,10 @@ get_user_data <- function(userID){
   spotify_key <- API_keys$keys$spotify_API_key
   spotify_secret <- API_keys$keys$spotify_secret
 
-  #garbage
-  #user_data <- spotify_features(spotify_key, spotify_secret, last_fm_data)
+  user_data <- spotify_features(spotify_key, spotify_secret, last_fm_data)
 
+  return(user_data)
+  
 }
 
 #function to pull last_fm_data
@@ -42,37 +46,63 @@ last_fm_pull <- function(lastfm_key, userID){
 #get audio features and other relevant info
 spotify_features <- function(spotify_key, spotify_secret, last_fm_data){
   
-  last_fm_data_id <- last_fm_data %>%
-    rowwise() %>%
-    mutate(id = track_id_lookup(track, artist, album, spotify_key, spotify_secret))
-  
-#  user_data_features <- add_spotify_features(spotify_key, spotify_secret, last_fm_data_id)
+  last_fm_terms <- last_fm_data %>%
+    select(-c("date", "posix_date_time", "dow", "date_unix")) %>%
+    distinct() %>%
+    rowwise()
+
+  last_fm_ids <- mutate(last_fm_terms, id = track_id_lookup(track, artist, album, spotify_key, spotify_secret))
+
+  return(last_fm_ids)
   
 }
 
 #lookup track id with track, artist, and album name
 track_id_lookup <- function(track, artist, album, spotify_key, spotify_secret){
   
-  frame <- spotifyr::search_spotify(paste(track, artist, album, sep = " "), type = "track", authorization = spotifyr::get_spotify_access_token(spotify_key, spotify_secret))
-  
-  id <- frame$id[1]
-  
-  return(id)
+  #get spotify search results
+  result <- spotifyr::search_spotify(paste(track, artist, album, sep = " "), type = "track", limit = 1, authorization = spotifyr::get_spotify_access_token(spotify_key, spotify_secret))
+  #create df for non-results
+  id <- c(NA)
+  no_ret <- data.frame(id)
+  #see if result is empty and create df with id == NA
+  if(nrow(result) == 0){
+    result = no_ret
+  }
+  #set track_id to result id val
+  track_id <- result$id[1]  
+  return(track_id)
 }
 
-#iterate through ID an join traack feature with main tbl
-add_spotify_features <- function(spotify_key, spotify_secret, last_fm_data_id){
-  
-  for (id in last_fm_data_id) {
-    features <- spotifyr::get_track_audio_features(id = id, authorization = spotifyr::get_spotify_access_token(spotify_key, spotify_secret))
-    full_join(last_fm_data_id, features)
-  }
-  
-}
+###above is completed on first pass
+
+#iterate through ID and join track feature with main tbl
+add_spotify_features <- function(spotify_key, spotify_secret, last_fm_data_id){}
 
 ###
 
 my_data <- get_user_data("j4yr0u93")
 
-test2 <- spotify_features(spotify_key, spotify_secret, last_fm_data)
+
+
+##testing functions and misc
+
+track = "dank"
+artist = "meme"
+album = "bruh"
+
+result <- spotifyr::search_spotify(paste(track, artist, album, sep = " "), type = "track", limit = 1, authorization = spotifyr::get_spotify_access_token(spotify_key, spotify_secret))
+
+test_check <- anti_join(last_fm_data, last_fm_ids)
+
+lastfm_hist_ids <- full_join(last_fm_data, last_fm_ids)
+
+write_csv(lastfm_hist_ids, "./data")
+
+write.csv(lastfm_hist_ids, file = "lastfm_hist_ids.csv")
+
+
+
+
+
 
