@@ -9,3 +9,6 @@ API_keys.toml
 .Rhistory
 .Rproj.user/B26FA048/pcs/workbench-pane.pper
 *.pper
+.RData
+.RData
+*.pper
