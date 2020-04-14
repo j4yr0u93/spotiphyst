@@ -4,3 +4,8 @@
 .Ruserdata
 API_keys.toml
 .httr-oauth
+.RData
+.RData
+.Rhistory
+.Rproj.user/B26FA048/pcs/workbench-pane.pper
+*.pper
