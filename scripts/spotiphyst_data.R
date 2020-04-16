@@ -1,7 +1,6 @@
 #scripting space for data pulling/scraping
 
 library(tidyr)
-library(purrr)
 library(dplyr)
 library(readr)
 
@@ -34,7 +33,7 @@ last_fm_pull <- function(lastfm_key, userID){
   
   last_fm_data <- last_fm_raw %>%
     rename(track = song_title) %>%
-    mutate(posix_date_time = as.POSIXct(as.numeric(date_unix), origin = '1970-01-01', tz = 'ET')) %>%
+    mutate(posix_date_time = as.POSIXct(as.numeric(date_unix), origin = '1970-01-01', tz = 'EST')) %>%
     mutate(date = as.Date(posix_date_time)) %>%
     mutate(dow = factor(weekdays(date), ordered = TRUE, levels = c("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"))) %>%
     select(-c("song_mbid", "artist_mbid", "album_mbid"))
@@ -51,9 +50,16 @@ spotify_features <- function(spotify_key, spotify_secret, last_fm_data){
     distinct() %>%
     rowwise()
 
-  last_fm_ids <- mutate(last_fm_terms, id = track_id_lookup(track, artist, album, spotify_key, spotify_secret))
+  last_fm_ids <- mutate(last_fm_terms, id = track_id_lookup(track, artist, album, spotify_key, spotify_secret)) %>%
+    filter(!is.na(id))
 
-  return(last_fm_ids)
+  audio_features <- add_spotify_features(spotify_key, spotify_secret, last_fm_ids)
+  
+  track_features_ids <- full_join(last_fm_ids, audio_features)
+  
+  full_data <- full_join(last_fm_data, track_features_ids)
+  
+  return(full_data)
   
 }
 
@@ -74,35 +80,40 @@ track_id_lookup <- function(track, artist, album, spotify_key, spotify_secret){
   return(track_id)
 }
 
-###above is completed on first pass
-
 #iterate through ID and join track feature with main tbl
-add_spotify_features <- function(spotify_key, spotify_secret, last_fm_data_id){}
+add_spotify_features <- function(spotify_key, spotify_secret, last_fm_ids){
+  
+  #create list of id lists per 100 ids or less (remainder list)
+  subsetted_id_dfs <- list()
+  id_df <- last_fm_ids %>% select(id)
+  div<-seq(100,(nrow(id_df)+99),100)
+  for(i in 1:length(div)) {
+    subsetted_id_dfs[[i]]<-id_df[(100*(i-1)+1):div[i],1]
+  }
+  #remove NA values from remainder list
+  subsetted_id_dfs <- lapply(subsetted_id_dfs, function(x) x[!is.na(x)])
+  
+  #feature call
+  audio_features <- colnames(data.frame()) %>%
+    c("acousticness", "analysis_url", "danceability", "duration_ms", "energy", "id", "instrumentalness", "key",
+      "liveness", "loudness", "mode", "speechiness", "tempo", "time_signature", "track_href", "type", "uri", "valence")
+  for (i in 1:length(subsetted_id_dfs)) {
+    features_temp <- spotifyr::get_track_audio_features(unlist(subsetted_id_dfs[i]), authorization = spotifyr::get_spotify_access_token(spotify_key, spotify_secret))
+    audio_features <- rbind(audio_features, features_temp)
+  }
+
+  return(audio_features)
+
+}
+
+###above is completed on first pass
 
 ###
 
-my_data <- get_user_data("j4yr0u93")
-
-
+all_data <- get_user_data("j4yr0u93")
 
 ##testing functions and misc
 
-track = "dank"
-artist = "meme"
-album = "bruh"
-
-result <- spotifyr::search_spotify(paste(track, artist, album, sep = " "), type = "track", limit = 1, authorization = spotifyr::get_spotify_access_token(spotify_key, spotify_secret))
-
-test_check <- anti_join(last_fm_data, last_fm_ids)
-
-lastfm_hist_ids <- full_join(last_fm_data, last_fm_ids)
-
-write_csv(lastfm_hist_ids, "./data")
-
-write.csv(lastfm_hist_ids, file = "lastfm_hist_ids.csv")
-
-
-
-
-
-
+str(all_data)
+  
+write.csv(all_data, file = "all_music_data.csv")
