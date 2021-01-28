@@ -1,4 +1,4 @@
-# spotifphyst
+# spotiphyst
 A shiny app for looking at your spotify listening trends
 
 Idealistically at some point I would like to be able to compare analysis of two or more users;
